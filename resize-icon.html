@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アイコンリサイズツール</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #1a1a2e;
+      color: #fff;
+    }
+    .container {
+      background: #0a0a0f;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+    }
+    h1 {
+      color: #00f3ff;
+      text-align: center;
+    }
+    .upload-area {
+      border: 2px dashed #00f3ff;
+      border-radius: 10px;
+      padding: 40px;
+      text-align: center;
+      margin: 20px 0;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .upload-area:hover {
+      background: rgba(0, 243, 255, 0.1);
+    }
+    .upload-area.dragover {
+      background: rgba(0, 243, 255, 0.2);
+      border-color: #a855f7;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .preview {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin: 30px 0;
+      flex-wrap: wrap;
+    }
+    .preview-item {
+      text-align: center;
+      background: #1a1a2e;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .preview-item canvas {
+      border: 2px solid #00f3ff;
+      border-radius: 4px;
+      background: #0a0a0f;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+    button {
+      background: linear-gradient(135deg, #00f3ff, #a855f7, #ec4899);
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      display: block;
+      margin: 20px auto;
+      transition: transform 0.2s;
+    }
+    button:hover:not(:disabled) {
+      transform: scale(1.05);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .status {
+      text-align: center;
+      margin-top: 20px;
+      color: #00f3ff;
+    }
+    .original-preview {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .original-preview img {
+      max-width: 200px;
+      border: 2px solid #00f3ff;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎚️ アイコンリサイズツール</h1>
+    <p style="text-align: center; color: #aaa;">
+      作成したアイコン画像をアップロードして、必要なサイズにリサイズします
+    </p>
+    
+    <div class="upload-area" id="uploadArea">
+      <p>📁 画像をドラッグ&ドロップ</p>
+      <p>または</p>
+      <p>クリックしてファイルを選択</p>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+    
+    <div class="original-preview" id="originalPreview" style="display: none;">
+      <h3>元の画像</h3>
+      <img id="originalImage" alt="元の画像">
+    </div>
+    
+    <div class="preview" id="preview"></div>
+    
+    <button id="downloadBtn" onclick="downloadIcons()" disabled>アイコンをダウンロード</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script>
+    const sizes = [
+      { size: 16, name: 'icon16.png' },
+      { size: 48, name: 'icon48.png' },
+      { size: 128, name: 'icon128.png' }
+    ];
+
+    let originalImage = null;
+
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const originalPreview = document.getElementById('originalPreview');
+    const originalImageEl = document.getElementById('originalImage');
+    const preview = document.getElementById('preview');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const status = document.getElementById('status');
+
+    // ファイル選択
+    uploadArea.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handleFileSelect);
+
+    // ドラッグ&ドロップ
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    function handleFileSelect(e) {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    }
+
+    function handleFile(file) {
+      if (!file.type.startsWith('image/')) {
+        status.textContent = '❌ 画像ファイルを選択してください';
+        status.style.color = '#ec4899';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          originalImage = img;
+          originalImageEl.src = e.target.result;
+          originalPreview.style.display = 'block';
+          generatePreviews();
+          downloadBtn.disabled = false;
+          status.textContent = '✅ 画像を読み込みました。プレビューを確認してダウンロードしてください。';
+          status.style.color = '#00f3ff';
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function generatePreviews() {
+      preview.innerHTML = '';
+      sizes.forEach(({ size, name }) => {
+        const item = document.createElement('div');
+        item.className = 'preview-item';
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const label = document.createElement('div');
+        label.textContent = `${size}x${size}`;
+        label.style.marginTop = '10px';
+        label.style.color = '#aaa';
+        item.appendChild(canvas);
+        item.appendChild(label);
+        preview.appendChild(item);
+        
+        renderToCanvas(canvas, size);
+      });
+    }
+
+    function renderToCanvas(canvas, size) {
+      const ctx = canvas.getContext('2d');
+      // 高品質なリサイズ
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(originalImage, 0, 0, size, size);
+    }
+
+    function downloadIcons() {
+      if (!originalImage) return;
+
+      status.textContent = '生成中...';
+      let downloaded = 0;
+
+      sizes.forEach(({ size, name }, index) => {
+        setTimeout(() => {
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(originalImage, 0, 0, size, size);
+          
+          canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = name;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            downloaded++;
+            if (downloaded === sizes.length) {
+              status.textContent = '✅ すべてのアイコンを生成しました！iconsフォルダに配置してください。';
+              status.style.color = '#00f3ff';
+            }
+          }, 'image/png');
+        }, index * 200);
+      });
+    }
+  </script>
+</body>
+</html>

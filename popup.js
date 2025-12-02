@@ -23,6 +23,7 @@ class EqualizerUI {
     this.updateConnectionLine();
     this.updateStatusBar();
     this.updateDeleteButtonVisibility(this.currentPreset);
+    this.updateTargetSite(); // 現在のサイト名を更新
   }
 
   // スライダーを生成
@@ -230,6 +231,80 @@ class EqualizerUI {
     if (bandCount) {
       bandCount.textContent = this.bandCount;
     }
+  }
+
+  // 現在のサイト名を更新
+  updateTargetSite() {
+    const targetSiteElement = document.getElementById('targetSite');
+    if (!targetSiteElement) return;
+
+    // 現在のタブのURLを取得
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0] && tabs[0].url) {
+        const url = new URL(tabs[0].url);
+        const hostname = url.hostname;
+        
+        // サイト名を抽出して表示
+        let siteName = this.getSiteDisplayName(hostname);
+        targetSiteElement.textContent = siteName;
+      } else {
+        targetSiteElement.textContent = 'UNKNOWN';
+      }
+    });
+  }
+
+  // ホスト名から表示名を取得
+  getSiteDisplayName(hostname) {
+    // よく使われるサイトの表示名マッピング
+    const siteMap = {
+      'music.youtube.com': 'YOUTUBE MUSIC',
+      'www.youtube.com': 'YOUTUBE',
+      'youtube.com': 'YOUTUBE',
+      'www.netflix.com': 'NETFLIX',
+      'netflix.com': 'NETFLIX',
+      'open.spotify.com': 'SPOTIFY',
+      'www.spotify.com': 'SPOTIFY',
+      'soundcloud.com': 'SOUNDCLOUD',
+      'www.soundcloud.com': 'SOUNDCLOUD',
+      'www.twitch.tv': 'TWITCH',
+      'twitch.tv': 'TWITCH',
+      'www.nicovideo.jp': 'NICONICO',
+      'nicovideo.jp': 'NICONICO',
+      'www.amazon.co.jp': 'AMAZON MUSIC',
+      'music.amazon.co.jp': 'AMAZON MUSIC',
+      'music.apple.com': 'APPLE MUSIC',
+      'www.disneyplus.com': 'DISNEY+',
+      'disneyplus.com': 'DISNEY+',
+      'www.hulu.com': 'HULU',
+      'hulu.com': 'HULU'
+    };
+
+    // 完全一致を確認
+    if (siteMap[hostname]) {
+      return siteMap[hostname];
+    }
+
+    // 部分一致を確認（サブドメイン対応）
+    for (const [key, value] of Object.entries(siteMap)) {
+      if (hostname.includes(key) || key.includes(hostname)) {
+        return value;
+      }
+    }
+
+    // マッピングがない場合は、ホスト名から表示名を生成
+    // www.を削除
+    let displayName = hostname.replace(/^www\./, '');
+    
+    // ドメイン部分のみを取得（例: youtube.com → YOUTUBE）
+    const parts = displayName.split('.');
+    if (parts.length >= 2) {
+      displayName = parts[parts.length - 2]; // 最後から2番目の部分
+    } else {
+      displayName = parts[0];
+    }
+    
+    // 大文字に変換して返す
+    return displayName.toUpperCase();
   }
 
   // プリセット適用
