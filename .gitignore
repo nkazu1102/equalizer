@@ -1,0 +1,23 @@
+# アイコンファイル（必要に応じて追加）
+# icons/*.png
+
+# OS関連
+.DS_Store
+Thumbs.db
+
+# エディタ関連
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ログファイル
+*.log
+
+# 一時ファイル
+*.tmp
+*.temp
+
+# 画像アセット（開発用）
+assets/

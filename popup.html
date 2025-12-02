@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Music Equalizer</title>
+  <link rel="stylesheet" href="popup.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- 背景アニメーション -->
+  <div class="bg-grid"></div>
+  <div class="bg-particles"></div>
+  <div class="bg-glow"></div>
+  
+  <div class="main-container">
+    <!-- ヘッダー -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo-container">
+          <svg class="logo-svg" viewBox="0 0 100 100">
+            <defs>
+              <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#00f3ff;stop-opacity:1" />
+                <stop offset="50%" style="stop-color:#a855f7;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+            <path d="M50 10 L90 30 L90 70 L50 90 L10 70 L10 30 Z" fill="none" stroke="url(#logoGradient)" stroke-width="3"/>
+            <circle cx="50" cy="50" r="15" fill="url(#logoGradient)"/>
+            <path d="M50 35 L50 65 M35 50 L65 50" stroke="#000" stroke-width="4"/>
+          </svg>
+          <div class="logo-text">
+            <h1>EQUALIZER</h1>
+            <span class="logo-subtitle">AUDIO CONTROL SYSTEM</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="power-toggle">
+          <input type="checkbox" id="enableToggle">
+          <label for="enableToggle">
+            <span class="power-icon">⚡</span>
+            <span class="power-status">INACTIVE</span>
+          </label>
+        </div>
+      </div>
+    </header>
+
+    <!-- プリセットコントロール -->
+    <section class="preset-section">
+      <div class="section-title">
+        <span class="title-line"></span>
+        <h2>PRESET CONTROL</h2>
+        <span class="title-line"></span>
+      </div>
+      <div class="preset-controls">
+        <div class="preset-selector">
+          <select id="presetSelect">
+            <option value="flat">FLAT</option>
+            <option value="perfect">PERFECT</option>
+            <option value="bass">BASS BOOST</option>
+            <option value="treble">TREBLE BOOST</option>
+            <option value="vocal">VOCAL ENHANCE</option>
+            <option value="rock">ROCK</option>
+            <option value="jazz">JAZZ</option>
+            <option value="classical">CLASSICAL</option>
+            <option value="electronic">ELECTRONIC</option>
+            <option value="custom">CUSTOM</option>
+          </select>
+        </div>
+        <button id="savePresetBtn" class="btn btn-primary">
+          <span class="btn-icon">💾</span>
+          <span>SAVE</span>
+        </button>
+        <button id="deletePresetBtn" class="btn btn-danger">
+          <span class="btn-icon">🗑️</span>
+          <span>DELETE</span>
+        </button>
+        <button id="resetBtn" class="btn btn-secondary">
+          <span class="btn-icon">🔄</span>
+          <span>RESET</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- イコライザーメイン -->
+    <section class="equalizer-section">
+      <div class="section-title">
+        <span class="title-line"></span>
+        <h2>FREQUENCY SPECTRUM</h2>
+        <span class="title-line"></span>
+      </div>
+      
+      <!-- dBスケールとグラフエリア -->
+      <div class="eq-main">
+        <div class="db-scale">
+          <div class="db-label" data-db="12">+12</div>
+          <div class="db-label" data-db="9">+9</div>
+          <div class="db-label" data-db="6">+6</div>
+          <div class="db-label" data-db="3">+3</div>
+          <div class="db-label zero" data-db="0">0</div>
+          <div class="db-label" data-db="-3">-3</div>
+          <div class="db-label" data-db="-6">-6</div>
+          <div class="db-label" data-db="-9">-9</div>
+          <div class="db-label" data-db="-12">-12</div>
+        </div>
+        
+        <div class="eq-graph-wrapper">
+          <div class="eq-graph">
+            <!-- グリッド線 -->
+            <div class="eq-grid">
+              <div class="grid-line h-line" style="top: 0%"></div>
+              <div class="grid-line h-line" style="top: 12.5%"></div>
+              <div class="grid-line h-line" style="top: 25%"></div>
+              <div class="grid-line h-line" style="top: 37.5%"></div>
+              <div class="grid-line h-line zero-line" style="top: 50%"></div>
+              <div class="grid-line h-line" style="top: 62.5%"></div>
+              <div class="grid-line h-line" style="top: 75%"></div>
+              <div class="grid-line h-line" style="top: 87.5%"></div>
+              <div class="grid-line h-line" style="top: 100%"></div>
+            </div>
+            
+            <!-- スライダーコンテナ -->
+            <div id="slidersContainer" class="sliders-container"></div>
+            
+            <!-- 接続線（SVG） -->
+            <svg class="connection-line" id="connectionLine"></svg>
+          </div>
+          
+          <!-- 周波数ラベル -->
+          <div id="freqLabels" class="freq-labels"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ステータスバー -->
+    <footer class="status-bar">
+      <div class="status-item">
+        <span class="status-icon">🎚️</span>
+        <span class="status-label">BANDS:</span>
+        <span class="status-value" id="bandCount">10</span>
+      </div>
+      <div class="status-item">
+        <span class="status-icon">📊</span>
+        <span class="status-label">RANGE:</span>
+        <span class="status-value">±12dB</span>
+      </div>
+      <div class="status-item">
+        <span class="status-icon">⚡</span>
+        <span class="status-label">STATUS:</span>
+        <span class="status-value active" id="statusValue">ONLINE</span>
+      </div>
+      <div class="status-item">
+        <span class="status-icon">🎵</span>
+        <span class="status-label">TARGET:</span>
+        <span class="status-value">YOUTUBE MUSIC</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
